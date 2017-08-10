@@ -58,26 +58,19 @@ The Input
 The input begins with an integer n on a line by itself representing
 the number of blocks in the block world.  You may assume that
 
-0 < n <
-25.
+0 < n < 25.
 
 The number of blocks is followed by a sequence of block commands, one
-command per line.  Your
-program should process all commands until the quit command is
-encountered.
+command per line. Your program should process all commands until the quit
+command is encountered.
 
 You may assume that all commands will be of the form specified above.
 There will be no syntactically incorrect commands.
 
 The Output
 The output should consist of the final state of the blocks world.  Each
-original block position numbered i
-(
-
-
-where n is the number of blocks) should appear
-followed immediately by a colon.
-If there is at least a block
+original block position numbered i (where n is the number of blocks) should
+appear followed immediately by a colon. If there is at least a block
 on it, the colon must be followed by one space, followed by a list of
 blocks that appear stacked in that position with each block number
 separated from other block numbers by a space. Don't put any trailing
@@ -99,8 +92,6 @@ move 2 over 1
 move 4 over 9
 quit
 
-
-
 Sample Output
  0: 0
  1: 1 9 2 4
@@ -114,48 +105,115 @@ Sample Output
  9:
 """
 
+
+def locate_blocks(block_a, block_b, dict_map):
+    """Look through dict_map to find the current dict key where the blocks are located """
+    for items in dict_map.items():
+        for i, val in enumerate([block_a, block_b]):
+            if val in items[1]:
+                if i == 0:
+                    loc_a = items[0]
+                else:
+                    loc_b = items[0]
+    return loc_a, loc_b
+
+
+def return_home(block_n, dict_map):
+    """Recursive base class"""
+    if dict_map[str(block_n)] == []:
+        dict_map[str(block_n)].append(block_n)
+        return dict_map
+    else:
+        return_home(dict_map[str(block_n)].pop(), dict_map)
+
+
+def move_onto(block_a, block_b, dict_map):
+    """Move block_a directly onto block_b"""
+    loc_a, loc_b = locate_blocks(block_a, block_b, dict_map)
+    # IFF both blocks are last items in their locations move a onto b.
+    while dict_map[str(loc_a)][-1] != block_a:
+        # print "INCEPTION ALERT!"
+        dict_map = return_home(dict_map[str(loc_a)].pop(), dict_map)
+    while dict_map[str(loc_b)][-1] != block_b:
+        # print "INCEPTION ALERT!"
+        dict_map = return_home(dict_map[str(loc_b)].pop(), dict_map)
+    if dict_map[str(loc_a)][-1] == block_a and dict_map[str(loc_b)][-1] == block_b:
+        dict_map[str(loc_b)].append(dict_map[str(loc_a)].pop())
+    return dict_map
+
+
+def move_over(block_a, block_b, dict_map):
+    """Move block_a directly over (not directly on top of) block_b"""
+    loc_a, loc_b = locate_blocks(block_a, block_b, dict_map)
+    # IFF block a last item in their locations move a onto b.
+    while dict_map[str(loc_a)][-1] != block_a:
+        # print "INCEPTION ALERT!"
+        dict_map = return_home(dict_map[str(loc_a)].pop(), dict_map)
+    dict_map[str(loc_b)].append(dict_map[str(loc_a)].pop())
+    return dict_map
+
+
+def pile_onto(block_a, block_b, dict_map):
+    """Move stack block_a directly onto block_b"""
+    loc_a, loc_b = locate_blocks(block_a, block_b, dict_map)
+    pile_a = dict_map[str(loc_a)][dict_map[str(loc_a)].index(block_a):]
+    del dict_map[str(loc_a)][dict_map[str(loc_a)].index(block_a):]
+    while dict_map[str(loc_b)][-1] != block_b:
+        # print "INCEPTION ALERT!"
+        dict_map = return_home(dict_map[str(loc_b)].pop(), dict_map)
+    dict_map[str(loc_b)] += pile_a
+    return dict_map
+
+
+def pile_over(block_a, block_b, dict_map):
+    """Move stack block_a directly over (not directly on top of) block_b"""
+    loc_a, loc_b = locate_blocks(block_a, block_b, dict_map)
+    pile_a = dict_map[str(loc_a)][dict_map[str(loc_a)].index(block_a):]
+    del dict_map[str(loc_a)][dict_map[str(loc_a)].index(block_a):]
+    dict_map[str(loc_b)] += pile_a
+    return dict_map
+
+
 FILE_DIRECTIONS = []
 
 with open("101_data.txt", "r") as infile:
     #    lines = [line for line in infile.split()] # Can't use attribute 'split' on file object
     for line in infile:
-        FILE_DIRECTIONS.append(line.split()) # Split based on whitespace between the words
+        FILE_DIRECTIONS.append(line.split())  # Split based on whitespace between the words
 
 NUM_BOXES = int(FILE_DIRECTIONS[0][0])
 out_dict = {}
 for box in range(NUM_BOXES):
     out_dict[str(box)] = [box]
 
+""" Test output functions: Pull out into a pytest file """
+#test_dict = {"1": [1, 2], "2": [], "3": [3, 4], "4": []}
+#print move_onto(1,3,test_dict)
+#print move_over(1,3,test_dict)
+#print pile_onto(3,1,test_dict)
+#print pile_over(1,3,test_dict)
+
 for i, v in enumerate(FILE_DIRECTIONS):
     if i > 0:
         if v[0] == "quit":
             break
-        elif v[0] == "move":
-            if v[2] == "onto":
-                if v[1] != v[3]:
-                    pass
-                else:
-                    pass
-            elif v[2] == "over":
-                if v[1] != v[3]:
-                    pass
-                else:
-                    pass
-            else:
-                print "error in directions"
-        elif v[0] == "pile":
-            if v[2] == "onto":
-                if v[1] != v[3]:
-                    pass
-                else:
-                    pass
-            elif v[2] == "over":
-                if v[1] != v[3]:
-                    pass
-                else:
-                    pass
+        if v[1] == v[3]:
+            pass
+        else:
+            if v[0] == "move" and v[2] == "onto":
+                out_dict = move_onto(int(v[1]), int(v[3]), out_dict)
+            elif v[0] == "move" and v[2] == "over":
+                out_dict = move_over(int(v[1]), int(v[3]), out_dict)
+            elif v[0] == "pile" and v[2] == "onto":
+                out_dict = pile_onto(int(v[1]), int(v[3]), out_dict)
+            elif v[0] == "pile" and v[2] == "over":
+                out_dict = pile_over(int(v[1]), int(v[3]), out_dict)
             else:
                 print "error in directions"
 
-for i in sorted(out_dict.keys()): # .sort() only works on lists and it returns a None. Even if it worked. I will use sorted(). sorted() uses more memory though becasue it makes a new copy of the list.
+""" .sort() only works on lists and it returns a None. Even if it worked.
+I will use sorted(). sorted() uses more memory
+though because it makes a new copy of the list. """
+
+for i in sorted(out_dict.keys()):
     print "{}: {}".format(i, out_dict[i])
